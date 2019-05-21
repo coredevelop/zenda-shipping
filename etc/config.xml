@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * @author Zenda
+ * @copyright Copyright (c) 2019 Zenda (https://www.zenda.global/)
+ * @package Zenda_Shipping
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Store:etc/config.xsd">
+    <default>
+        <carriers>
+            <zenda>
+                <active>0</active>
+                <model>Zenda\Shipping\Model\Carrier</model>
+                <name>Express 4 to 8 Days</name>
+                <username backend_model="Magento\Config\Model\Config\Backend\Encrypted" />
+                <password backend_model="Magento\Config\Model\Config\Backend\Encrypted" />
+                <title>Zenda, powered by British Airways</title>
+                <sallowspecific>0</sallowspecific>
+                <specificerrmsg>This shipping method is currently unavailable. If you would like to ship using this shipping method, please contact us.</specificerrmsg>
+                <tooltip_label>Is tax and duty required?</tooltip_label>
+                <tooltip_content>Most goods imported from outside the EU are subject to customs duty and tax. With other carriers, you have to pay these extra fees when your order arrives. With Zenda, you can avoid delays and hassle by paying all fees in advance.</tooltip_content>
+                <debug>0</debug>
+                <showmethod>0</showmethod>
+            </zenda>
+        </carriers>
+    </default>
+</config>

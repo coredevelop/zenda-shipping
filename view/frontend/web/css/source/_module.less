@@ -1,0 +1,69 @@
+/**
+ * @author Zenda
+ * @copyright Copyright (c) 2019 Zenda (https://www.zenda.global/)
+ * @package Zenda_Shipping
+ */
+.col-method {
+    .block-content {
+        float: left;
+        margin-right: 10px;
+        @media (min-width: 768px) and (max-width: 1199px) {
+            width: 70%;
+        }
+
+        .method-title strong {
+            display: block;
+        }
+
+        ._with-tooltip {
+            position: relative;
+            @media (min-width: 375px) {
+                width: 180px;
+            }
+
+            .field-tooltip {
+                right: -15px;
+                top: -5px;
+
+                &:hover .field-tooltip-content {
+                    display: block;
+                }
+
+                @media (max-width: 375px) {
+                    right: -25px;
+                    top: 0;
+                }
+
+                .field-tooltip-content {
+                    @media (max-width: 768px) {
+                        right: -100px;
+                        &:before, &:after {
+                            right: 100px;
+                        }
+                    }
+
+                    @media (max-width: 375px) {
+                        right: -80px;
+                        &:before, &:after {
+                            right: 80px;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    .block-logo {
+        min-width: 50px;
+        float: left;
+        border: 1px solid #ddd;
+        @media (max-width: 767px) {
+            margin-top: 10px;
+        }
+
+        img {
+            width: 70px;
+            height: auto;
+        }
+    }
+}
