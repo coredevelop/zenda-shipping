@@ -50,14 +50,6 @@
                 <field id="title" translate="label" type="text" sortOrder="100" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
                     <label>Title</label>
                 </field>
-                <field id="max_package_weight" translate="label" type="text" sortOrder="110" showInDefault="1" showInWebsite="1" showInStore="0" canRestore="1">
-                    <label>Maximum Package Weight</label>
-                    <validate>validate-number validate-zero-or-greater</validate>
-                </field>
-                <field id="max_package_volume" translate="label" type="text" sortOrder="120" showInDefault="1" showInWebsite="1" showInStore="0" canRestore="1">
-                    <label>Maximum Package Volume</label>
-                    <validate>validate-number validate-zero-or-greater</validate>
-                </field>
                 <field id="sallowspecific" translate="label" type="select" sortOrder="130" showInDefault="1" showInWebsite="1" showInStore="0" canRestore="1">
                     <label>Ship to Applicable Countries</label>
                     <frontend_class>shipping-applicable-country</frontend_class>

@@ -156,7 +156,13 @@ class Carrier extends AbstractCarrier implements CarrierInterface
         if ($this->getConfigFlag('enable_flat_rate')) {
             $totalShippingPrice = (float)$this->getConfigData('flat_rate_price');
         } else {
-            $packages = $this->_shipping->composePackages($this, $this->_request);
+            $maxDimension = $this->_service->getMaxValidDimension(
+                $this->_getPackageCurrencyCode(), 
+                $this->_getOriginDetails(), 
+                $this->_getDestinationDetails()
+            );
+            
+            $packages = $this->_shipping->composePackages($this->_request, $maxDimension['weight'], $maxDimension['volume']);
             if (!empty($packages)) {
                 foreach ($packages as $key => $package) {
                     // Sum up the shipping price

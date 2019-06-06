@@ -15,21 +15,6 @@ class Shipping
     const DEFAULT_ITEM_MIN_VOLUME = 1;
 
     /**
-     * Default item max weight in pounds (28 kg)
-     */
-    const DEFAULT_ITEM_MAX_WEIGHT = 61.7294;
-
-    /**
-     * Default item max volume in cubic inch (1 M3)
-     */
-    const DEFAULT_ITEM_MAX_VOLUME = 61023.7;
-
-    /**
-     * Pound to kilogram conversion value
-     */
-    const POUNT_TO_KG = 0.4536;
-
-    /**
      * @var \Magento\Catalog\Api\ProductRepositoryInterface
      */
     protected $_productRepository;
@@ -65,15 +50,14 @@ class Shipping
     /**
      * Compose Packages
      *
-     * @param \Magento\Shipping\Model\Carrier\AbstractCarrier $carrier
      * @param \Magento\Quote\Model\Quote\Address\RateRequest  $request
+     * @param string $maxWeight
+     * @param string $maxVolume
      * @return array
      */
-    public function composePackages($carrier, $request)
+    public function composePackages($request, $maxWeight, $maxVolume)
     {
         $allItems = $request->getAllItems();
-        $maxWeight = $this->_getMaxWeight($carrier);
-        $maxVolume = $this->_getMaxVolume($carrier);
 
         $items = [];
         foreach ($allItems as $item) {
@@ -146,34 +130,6 @@ class Shipping
         }
 
         return $itemVolume;
-    }
-
-    /**
-     * Get carrier's max weight allowed
-     *
-     * @param \Magento\Shipping\Model\Carrier\AbstractCarrier $carrier
-     * @return float|int
-     */
-    protected function _getMaxWeight($carrier)
-    {
-        $maxWeight = (double)$carrier->getConfigData('max_package_weight') ?: (double)self::DEFAULT_ITEM_MAX_WEIGHT;
-
-        if ($this->_service->getWeightUnit() == 'KG') {
-            $maxWeight = $maxWeight * self::POUNT_TO_KG;
-        }
-
-        return $maxWeight;
-    }
-
-    /**
-     * Get carrier's max volume allowed
-     *
-     * @param \Magento\Shipping\Model\Carrier\AbstractCarrier $carrier
-     * @return float
-     */
-    protected function _getMaxVolume($carrier)
-    {
-        return (double)$carrier->getConfigData('max_package_volume') ?: (double)self::DEFAULT_ITEM_MAX_VOLUME;
     }
 
     /**

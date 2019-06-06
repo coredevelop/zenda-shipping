@@ -10,6 +10,21 @@ namespace Zenda\Shipping\Model;
 class Service
 {
     /**
+     * 1 kilogram (kg) is equal to 2.2046 pounds 
+     */
+    const KG_TO_POUND = 2.20462262;
+
+    /**
+     * 1 m3 is equal to 61 023.7441 in3 
+     */
+    const M2_TO_IN3 = 61023.7441;
+
+    /**
+     * 1 cm3 is equal to 0.0610237441 in3 
+     */
+    const CM3_TO_IN3 = 0.0610237441;
+
+    /**
      * @var string
      */
     protected $_code = 'zenda';
@@ -282,6 +297,68 @@ class Service
     }
 
     /**
+     * Get max valid dimension from API
+     *
+     * @param $currencyCode
+     * @param $originDetails
+     * @param $destinationDetails
+     *
+     * @return array
+     */
+    public function getMaxValidDimension(
+        $currencyCode,
+        $originDetails,
+        $destinationDetails
+    ) {
+        $maxValidWeight = $this->_getMaxValidWeight();
+        $maxValidVolume = $this->_getMaxValidVolume();
+        if (!$maxValidWeight || !$maxValidVolume) {
+            $requestBody = $this->getShippingRequestBody(
+                $currencyCode,
+                $originDetails,
+                $destinationDetails,
+                1,
+                1
+            );
+
+            try {
+                $this->authenticate();
+
+                if ($this->_getAccessToken()) {
+                    $responseBody = $this->_request(
+                        $this->getShippingCostUrl(),
+                        array('token: ' . $this->_getAccessToken()),
+                        $requestBody
+                    );
+                    if (isset($responseBody[0]) && isset($responseBody[0]['maxValidDimension'])) {
+                        foreach ($responseBody[0]['maxValidDimension'] as $dimension) {
+                            if (isset($dimension['metricType']) && isset($dimension['metricValue']) && isset($dimension['metricUnit'])) {
+                                if ($dimension['metricType'] == "WEIGHT") {
+                                    $maxValidWeight = $this->convertWeight($dimension['metricValue'], $dimension['metricUnit']);
+                                    $this->_coreSession->setMaxValidWeight($maxValidWeight);
+                                }
+                                if ($dimension['metricType'] == "VOLUME") {
+                                    $maxValidVolume = $this->convertVolume($dimension['metricValue'], $dimension['metricUnit']);
+                                    $this->_coreSession->setMaxValidVolume($maxValidVolume);
+                                }
+                            }
+                        }
+                    } elseif (isset($responseBody['alerts'][0]['code'])
+                        && isset($responseBody['alerts'][0]['message'])
+                    ) {
+                        $msg = $responseBody['alerts'][0]['message'];
+                        throw new \Exception($msg);
+                    }
+                }
+            } catch (\Exception $e) {
+                $this->_errors[] = $e->getCode() . " - " . $e->getMessage() . "\n" . $e->getTraceAsString();
+            }
+        }
+
+        return ['weight' => $maxValidWeight, 'volume' => $maxValidVolume];
+    }
+
+    /**
      * Get the shipping price
      *
      * @param $currencyCode
@@ -299,32 +376,13 @@ class Service
         $packageWeight,
         $packageVolume
     ) {
-        $requestBody = [
-            'serviceLevel' => '',
-            'origin'       => [
-                'postalCode'  => $originDetails['postalCode'],
-                'countryCode' => $originDetails['countryCode']
-            ],
-            'destination'  => [
-                'postalCode'  => $destinationDetails['postalCode'],
-                'countryCode' => $destinationDetails['countryCode']
-            ],
-            'currencyCode' => $currencyCode,
-            'parcel'       => [
-                'metrics' => [
-                    [
-                        'metricType'  => 'WEIGHT',
-                        'metricValue' => $packageWeight,
-                        'metricUnit'  => $this->getWeightUnit()
-                    ],
-                    [
-                        'metricType'  => 'VOLUME',
-                        'metricValue' => $packageVolume,
-                        'metricUnit'  => $this->getVolumeUnit()
-                    ]
-                ]
-            ]
-        ];
+        $requestBody = $this->getShippingRequestBody(
+            $currencyCode,
+            $originDetails,
+            $destinationDetails,
+            $packageWeight,
+            $packageVolume
+        );
 
         $shippingPrice = 0.00;
 
@@ -414,6 +472,119 @@ class Service
         }
 
         return $totalTaxAndDuty;
+    }
+
+    /**
+     * Get the shipping request
+     *
+     * @param $currencyCode
+     * @param $originDetails
+     * @param $destinationDetails
+     * @param $packageWeight
+     * @param $packageVolume
+     *
+     * @return array
+     */
+    public function getShippingRequestBody(
+        $currencyCode,
+        $originDetails,
+        $destinationDetails,
+        $packageWeight,
+        $packageVolume
+    ) {
+        $requestBody = [
+            'serviceLevel' => '',
+            'origin'       => [
+                'postalCode'  => $originDetails['postalCode'],
+                'countryCode' => $originDetails['countryCode']
+            ],
+            'destination'  => [
+                'postalCode'  => $destinationDetails['postalCode'],
+                'countryCode' => $destinationDetails['countryCode']
+            ],
+            'currencyCode' => $currencyCode,
+            'parcel'       => [
+                'metrics' => [
+                    [
+                        'metricType'  => 'WEIGHT',
+                        'metricValue' => $packageWeight,
+                        'metricUnit'  => $this->getWeightUnit()
+                    ],
+                    [
+                        'metricType'  => 'VOLUME',
+                        'metricValue' => $packageVolume,
+                        'metricUnit'  => $this->getVolumeUnit()
+                    ]
+                ]
+            ]
+        ];
+
+        return $requestBody;
+    }
+
+    /**
+     * Convert others weight unit to pounds
+     *
+     * @param   string $weight
+     * @param   string $unit
+     *
+     * @return  string
+     */
+    protected function convertWeight($weight, $unit)
+    {
+        switch (strtoupper($unit)) {
+            case $this->getWeightUnit():
+                break;
+            case 'KG':
+                $weight = $weight * self::KG_TO_POUND;
+                break;
+        }
+
+        return $weight;
+    }
+
+    /**
+     * Convert others volume unit to in3
+     *
+     * @param   string $volume
+     * @param   string $unit
+     *
+     * @return  string
+     */
+    protected function convertVolume($volume, $unit)
+    {
+        switch (strtoupper($unit)) {
+            case $this->getVolumeUnit():
+                break;
+            case 'M3':
+                $volume = $volume * self::M2_TO_IN3;
+                break;
+            case 'CM3':
+                $volume = $volume * self::CM3_TO_IN3;
+                break;
+        }
+
+        return $volume;
+    }
+
+    /**
+     * Get the saved max valid weight from session
+     *
+     * @return mixed
+     */
+    protected function _getMaxValidWeight()
+    {
+        return $this->_coreSession->getMaxValidWeight();
+    }
+
+    /**
+     * Get the saved max valid volume from session
+     *
+     * @return mixed
+     */
+    protected function _getMaxValidVolume()
+    {
+        return $this->_coreSession->getMaxValidVolume();
     }
 
     /**
